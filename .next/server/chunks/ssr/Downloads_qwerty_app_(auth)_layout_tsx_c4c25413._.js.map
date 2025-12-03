@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../../../Downloads/qwerty/app/%28auth%29/layout.tsx"],"sourcesContent":["import type React from \"react\"\nexport default function AuthLayout({\n  children,\n}: {\n  children: React.ReactNode\n}) {\n  return children\n}\n"],"names":[],"mappings":"sCACe,SAAS,EAAW,UACjC,CAAQ,CAGT,EACC,OAAO,CACT"}

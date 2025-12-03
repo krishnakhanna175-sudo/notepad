@@ -1,0 +1,13 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_not-found/page.js")
+R.c("server/chunks/ssr/[root-of-the-server]__a9faa1dc._.js")
+R.c("server/chunks/ssr/d874b_next_dist_2035d9cb._.js")
+R.c("server/chunks/ssr/d874b_next_dist_esm_build_templates_app-page_ab8238bd.js")
+R.c("server/chunks/ssr/[root-of-the-server]__146b2e7d._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__1e51a0e9._.js")
+R.c("server/chunks/ssr/d874b_next_dist_14692939._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__f84aa627._.js")
+R.c("server/chunks/ssr/d874b_next_dist_client_components_0eb8ef25._.js")
+R.c("server/chunks/ssr/d874b_next_dist_client_components_builtin_forbidden_45e2b125.js")
+R.c("server/chunks/ssr/Downloads_qwerty__next-internal_server_app__not-found_page_actions_0d350deb.js")
+R.m(48542)
+module.exports=R.m(48542).exports

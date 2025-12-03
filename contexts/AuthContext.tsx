@@ -25,19 +25,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize from localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem("token")
-    if (storedToken) {
-      setToken(storedToken)
-      // Optionally, you could verify the token here by calling an API endpoint
-      const storedUser = localStorage.getItem("user")
-      if (storedUser) {
-        setUser(JSON.parse(storedUser))
+    try {
+      const storedToken = localStorage.getItem("token")
+      if (storedToken) {
+        setToken(storedToken)
+        const storedUser = localStorage.getItem("user")
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser))
+          } catch (e) {
+            console.error("Failed to parse stored user:", e)
+            localStorage.removeItem("user")
+          }
+        }
       }
+    } catch (e) {
+      console.error("Failed to initialize auth:", e)
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true)
     try {
       const response = await fetch("/api/auth/login", {
@@ -56,12 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user)
       localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
+    } catch (error) {
+      console.error("Login error:", error)
+      throw error
     } finally {
       setIsLoading(false)
     }
   }
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string): Promise<void> => {
     setIsLoading(true)
     try {
       const response = await fetch("/api/auth/register", {
@@ -80,24 +92,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user)
       localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
+    } catch (error) {
+      console.error("Register error:", error)
+      throw error
     } finally {
       setIsLoading(false)
     }
   }
 
-  const logout = () => {
+  const logout = (): void => {
     setUser(null)
     setToken(null)
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
+    try {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+    } catch (e) {
+      console.error("Failed to clear localStorage:", e)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
   )
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext)
   if (context === undefined) {
     throw new Error("useAuth must be used within AuthProvider")
