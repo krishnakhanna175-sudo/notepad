@@ -5,8 +5,12 @@ import { generateToken } from "@/lib/jwt"
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("Register endpoint called")
     await connectDB()
+    console.log("Database connected")
+    
     const { email, password } = await req.json()
+    console.log("Register attempt for email:", email)
 
     // Validate input
     if (!email || !password || password.length < 6) {
@@ -16,6 +20,7 @@ export async function POST(req: NextRequest) {
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() })
     if (existingUser) {
+      console.log("User already exists:", email)
       return NextResponse.json({ error: "Email already in use" }, { status: 400 })
     }
 
@@ -24,6 +29,7 @@ export async function POST(req: NextRequest) {
       email: email.toLowerCase(),
       password,
     })
+    console.log("User created:", user._id)
 
     // Generate JWT token
     const token = generateToken(user._id.toString())
@@ -38,6 +44,7 @@ export async function POST(req: NextRequest) {
     )
   } catch (error) {
     console.error("Register error:", error)
-    return NextResponse.json({ error: "Registration failed" }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : "Registration failed"
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

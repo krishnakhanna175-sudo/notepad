@@ -5,8 +5,12 @@ import { generateToken } from "@/lib/jwt"
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("Login endpoint called")
     await connectDB()
+    console.log("Database connected")
+    
     const { email, password } = await req.json()
+    console.log("Login attempt for email:", email)
 
     // Validate input
     if (!email || !password) {
@@ -17,17 +21,20 @@ export async function POST(req: NextRequest) {
     const user = await User.findOne({ email: email.toLowerCase() }).select("+password")
 
     if (!user) {
+      console.log("User not found:", email)
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     // Compare passwords
     const isPasswordValid = await user.comparePassword(password)
     if (!isPasswordValid) {
+      console.log("Invalid password for user:", email)
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     // Generate JWT token
     const token = generateToken(user._id.toString())
+    console.log("User logged in:", user._id)
 
     return NextResponse.json(
       {
@@ -39,6 +46,7 @@ export async function POST(req: NextRequest) {
     )
   } catch (error) {
     console.error("Login error:", error)
-    return NextResponse.json({ error: "Login failed" }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : "Login failed"
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
