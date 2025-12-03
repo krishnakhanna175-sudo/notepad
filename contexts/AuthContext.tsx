@@ -161,15 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     }
   }
 
-  if (!isMounted) {
-    // Return a loading state during SSR and initial hydration
-    return (
-      <AuthContext.Provider value={{ user: null, token: null, isLoading: true, login, register, logout }}>
-        {children}
-      </AuthContext.Provider>
-    )
-  }
-
   return (
     <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
       {children}
@@ -179,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within AuthProvider")
   }
   return context

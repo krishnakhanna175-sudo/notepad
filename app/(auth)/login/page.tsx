@@ -22,13 +22,30 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    // Validate inputs
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    if (!password) {
+      setError("Password is required")
+      return
+    }
+
     setIsLoading(true)
 
     try {
+      if (typeof login !== "function") {
+        throw new Error("Login service is not available")
+      }
       await login(email, password)
       router.push("/dashboard")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+      const errorMessage = err instanceof Error ? err.message : "Login failed"
+      setError(errorMessage)
+      console.error("Login error:", err)
     } finally {
       setIsLoading(false)
     }

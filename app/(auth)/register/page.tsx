@@ -24,6 +24,12 @@ export default function RegisterPage() {
     e.preventDefault()
     setError("")
 
+    // Validate email
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address")
+      return
+    }
+
     // Validate passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match")
@@ -39,10 +45,15 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
+      if (typeof register !== "function") {
+        throw new Error("Registration service is not available")
+      }
       await register(email, password)
       router.push("/dashboard")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed")
+      const errorMessage = err instanceof Error ? err.message : "Registration failed"
+      setError(errorMessage)
+      console.error("Registration error:", err)
     } finally {
       setIsLoading(false)
     }
