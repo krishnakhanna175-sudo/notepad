@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
@@ -17,12 +17,23 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isReady, setIsReady] = useState(false)
   const { register } = useAuth()
   const router = useRouter()
+
+  // Ensure hooks are ready before allowing form submission
+  useEffect(() => {
+    setIsReady(true)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    if (!isReady) {
+      setError("Page is loading, please wait")
+      return
+    }
 
     // Validate email
     if (!email || !email.includes("@")) {
@@ -46,7 +57,7 @@ export default function RegisterPage() {
 
     try {
       if (typeof register !== "function") {
-        throw new Error("Registration service is not available")
+        throw new Error("Registration service is not available. Please refresh the page.")
       }
       await register(email, password)
       router.push("/dashboard")

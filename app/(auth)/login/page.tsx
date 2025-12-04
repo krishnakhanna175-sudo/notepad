@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
@@ -16,12 +16,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isReady, setIsReady] = useState(false)
   const { login } = useAuth()
   const router = useRouter()
+
+  // Ensure hooks are ready before allowing form submission
+  useEffect(() => {
+    setIsReady(true)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    if (!isReady) {
+      setError("Page is loading, please wait")
+      return
+    }
 
     // Validate inputs
     if (!email || !email.includes("@")) {
@@ -38,7 +49,7 @@ export default function LoginPage() {
 
     try {
       if (typeof login !== "function") {
-        throw new Error("Login service is not available")
+        throw new Error("Login service is not available. Please refresh the page.")
       }
       await login(email, password)
       router.push("/dashboard")

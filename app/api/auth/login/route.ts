@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       {
         message: "Login successful",
         token,
-        user: { id: user._id, email: user.email },
+        user: { id: user._id.toString(), email: user.email },
       },
       { status: 200 },
     )

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       {
         message: "User registered successfully",
         token,
-        user: { id: user._id, email: user.email },
+        user: { id: user._id.toString(), email: user.email },
       },
       { status: 201 },
     )
