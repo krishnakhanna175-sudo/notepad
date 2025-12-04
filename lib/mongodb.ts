@@ -1,13 +1,12 @@
 import mongoose from "mongoose"
 
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/securenotepad"
+const mongoUri = process.env.MONGODB_URI
 
-if (!process.env.MONGODB_URI && process.env.NODE_ENV === "production") {
-  console.warn("Warning: MONGODB_URI not set, using default localhost connection")
+if (!mongoUri) {
+  throw new Error("Please define the MONGODB_URI environment variable")
 }
 
-// Singleton connection pattern to prevent multiple connections
-let cached = global.mongoose as any
+let cached = global.mongoose
 
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null }
@@ -23,14 +22,23 @@ export async function connectDB() {
       bufferCommands: false,
     }
 
-    cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
-      console.log("MongoDB connected successfully")
-      return mongoose
-    }).catch((error) => {
-      console.error("MongoDB connection error:", error.message)
-      throw error
-    })
+    cached.promise = mongoose
+      .connect(mongoUri, opts)
+      .then((mongoose) => {
+        return mongoose
+      })
+      .catch((error) => {
+        console.error("MongoDB connection error:", error)
+        throw error
+      })
   }
-  cached.conn = await cached.promise
+
+  try {
+    cached.conn = await cached.promise
+  } catch (e) {
+    cached.promise = null
+    throw e
+  }
+
   return cached.conn
 }

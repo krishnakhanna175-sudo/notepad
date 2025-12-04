@@ -1,63 +1,39 @@
-import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
-import { Note } from "@/models/Note"
 import { verifyToken } from "@/lib/jwt"
+import { Note } from "@/models/Note"
+import { NextRequest, NextResponse } from "next/server"
 
-async function authenticate(req: NextRequest): Promise<string | null> {
-  const authHeader = req.headers.get("authorization")
-  const token = authHeader?.split(" ")[1]
-
-  if (!token) return null
-
-  const decoded = verifyToken(token)
-  return decoded?.userId || null
-}
-
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const userId = await authenticate(req)
-    if (!userId) {
+    await connectDB()
+
+    const authHeader = request.headers.get("authorization")
+    if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await connectDB()
-    const { id } = await params
+    const token = authHeader.substring(7)
+    const decoded = verifyToken(token)
 
-    const note = await Note.findOne({
-      _id: id,
-      owner: userId,
-    })
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    const { title, content, isArchived } = await request.json()
+    const noteId = params.id
+
+    // Find and verify ownership
+    const note = await Note.findById(noteId)
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ note }, { status: 200 })
-  } catch (error) {
-    console.error("Fetch note error:", error)
-    return NextResponse.json({ error: "Failed to fetch note" }, { status: 500 })
-  }
-}
-
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const userId = await authenticate(req)
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    await connectDB()
-    const { id } = await params
-    const { title, content, isArchived } = await req.json()
-
-    // Verify ownership
-    const note = await Note.findOne({
-      _id: id,
-      owner: userId,
-    })
-
-    if (!note) {
-      return NextResponse.json({ error: "Note not found" }, { status: 404 })
+    if (note.userId !== decoded.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
     // Update note
@@ -67,38 +43,57 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     await note.save()
 
-    return NextResponse.json({ message: "Note updated", note }, { status: 200 })
-  } catch (error) {
+    return NextResponse.json({ note }, { status: 200 })
+  } catch (error: any) {
     console.error("Update note error:", error)
-    return NextResponse.json({ error: "Failed to update note" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to update note" },
+      { status: 500 }
+    )
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const userId = await authenticate(req)
-    if (!userId) {
+    await connectDB()
+
+    const authHeader = request.headers.get("authorization")
+    if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await connectDB()
-    const { id } = await params
+    const token = authHeader.substring(7)
+    const decoded = verifyToken(token)
 
-    // Verify ownership before deletion
-    const note = await Note.findOne({
-      _id: id,
-      owner: userId,
-    })
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    const noteId = params.id
+
+    // Find and verify ownership
+    const note = await Note.findById(noteId)
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 })
     }
 
-    await Note.deleteOne({ _id: id })
+    if (note.userId !== decoded.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    }
 
-    return NextResponse.json({ message: "Note deleted" }, { status: 200 })
-  } catch (error) {
+    // Delete note
+    await Note.findByIdAndDelete(noteId)
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (error: any) {
     console.error("Delete note error:", error)
-    return NextResponse.json({ error: "Failed to delete note" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to delete note" },
+      { status: 500 }
+    )
   }
 }

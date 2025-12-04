@@ -1,61 +1,74 @@
-import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
-import { Note } from "@/models/Note"
 import { verifyToken } from "@/lib/jwt"
-import mongoose from "mongoose"
+import { Note } from "@/models/Note"
+import { NextRequest, NextResponse } from "next/server"
 
-async function authenticate(req: NextRequest): Promise<string | null> {
-  const authHeader = req.headers.get("authorization")
-  const token = authHeader?.split(" ")[1]
-
-  if (!token) return null
-
-  const decoded = verifyToken(token)
-  return decoded?.userId || null
-}
-
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const userId = await authenticate(req)
-    if (!userId) {
+    await connectDB()
+
+    // Get token from Authorization header
+    const authHeader = request.headers.get("authorization")
+    if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await connectDB()
+    const token = authHeader.substring(7)
+    const decoded = verifyToken(token)
 
-    // Get notes belonging to the authenticated user
-    const notes = await Note.find({ owner: userId }).sort({ createdAt: -1 })
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    // Fetch user's notes
+    const notes = await Note.find({ userId: decoded.userId }).sort({
+      createdAt: -1,
+    })
 
     return NextResponse.json({ notes }, { status: 200 })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Fetch notes error:", error)
-    return NextResponse.json({ error: "Failed to fetch notes" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to fetch notes" },
+      { status: 500 }
+    )
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const userId = await authenticate(req)
-    if (!userId) {
+    await connectDB()
+
+    // Get token from Authorization header
+    const authHeader = request.headers.get("authorization")
+    if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await connectDB()
-    const { title, content } = await req.json()
+    const token = authHeader.substring(7)
+    const decoded = verifyToken(token)
 
-    if (!title) {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 })
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
-    const note = await Note.create({
-      title,
+    const { title, content } = await request.json()
+
+    // Create note
+    const note = new Note({
+      userId: decoded.userId,
+      title: title || "Untitled Note",
       content: content || "",
-      owner: new mongoose.Types.ObjectId(userId),
     })
 
-    return NextResponse.json({ message: "Note created", note }, { status: 201 })
-  } catch (error) {
+    await note.save()
+
+    return NextResponse.json({ note }, { status: 201 })
+  } catch (error: any) {
     console.error("Create note error:", error)
-    return NextResponse.json({ error: "Failed to create note" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to create note" },
+      { status: 500 }
+    )
   }
 }

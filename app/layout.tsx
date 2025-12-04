@@ -1,47 +1,66 @@
-import type React from "react"
-// <CHANGE> Update metadata and add AuthProvider
+/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import { AuthProvider } from "@/contexts/AuthContext"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
-
 export const metadata: Metadata = {
-  title: "SecureNotePad - Secure Note Taking",
-  description: "A secure, full-stack note-taking application with authentication",
-  generator: "v0.app",
-  icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
-  },
+  title: "SecureNotePad - Encrypted Note Taking",
+  description: "A secure, encrypted note-taking application for your thoughts and ideas.",
+  viewport: "width=device-width, initial-scale=1",
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
-        <Analytics />
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <style>{`
+          :root {
+            --background: 0 0% 100%;
+            --foreground: 0 0% 3.6%;
+            --card: 0 0% 100%;
+            --card-foreground: 0 0% 3.6%;
+            --primary: 0 0% 9%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 0 0% 96.1%;
+            --secondary-foreground: 0 0% 9%;
+            --muted: 0 0% 89.8%;
+            --muted-foreground: 0 0% 45.1%;
+            --accent: 0 0% 9%;
+            --accent-foreground: 0 0% 100%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 100%;
+            --border: 0 0% 89.8%;
+            --input: 0 0% 89.8%;
+            --ring: 0 0% 9%;
+            --radius: 0.5rem;
+          }
+
+          .dark {
+            --background: 0 0% 3.6%;
+            --foreground: 0 0% 98.2%;
+            --card: 0 0% 3.6%;
+            --card-foreground: 0 0% 98.2%;
+            --primary: 0 0% 98.2%;
+            --primary-foreground: 0 0% 9%;
+            --secondary: 0 0% 14.9%;
+            --secondary-foreground: 0 0% 98.2%;
+            --muted: 0 0% 14.9%;
+            --muted-foreground: 0 0% 63.9%;
+            --accent: 0 0% 98.2%;
+            --accent-foreground: 0 0% 9%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 9%;
+            --border: 0 0% 14.9%;
+            --input: 0 0% 14.9%;
+            --ring: 0 0% 83.1%;
+          }
+        `}</style>
+      </head>
+      <body className="bg-background text-foreground">
+        {children}
       </body>
     </html>
   )

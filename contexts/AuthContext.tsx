@@ -1,22 +1,22 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode, FC, PropsWithChildren } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  FC,
+  PropsWithChildren,
+} from "react"
 
-// User type
-interface AuthUser {
-  id: string
+export interface User {
+  _id: string
   email: string
 }
 
-// Auth response from API
-interface AuthResponse {
-  token: string
-  user: AuthUser
-}
-
-// Context type
-interface AuthContextType {
-  user: AuthUser | null
+export interface AuthContextType {
+  user: User | null
   token: string | null
   isLoading: boolean
   isAuthenticated: boolean
@@ -25,62 +25,54 @@ interface AuthContextType {
   logout: () => void
 }
 
-// Provide default implementation
 const defaultAuthContext: AuthContextType = {
   user: null,
   token: null,
-  isLoading: true,
+  isLoading: false,
   isAuthenticated: false,
   login: async () => {
-    throw new Error("Auth context not initialized - useAuth must be used within AuthProvider")
+    throw new Error("Login service not available")
   },
   register: async () => {
-    throw new Error("Auth context not initialized - useAuth must be used within AuthProvider")
+    throw new Error("Registration service not available")
   },
   logout: () => {
-    throw new Error("Auth context not initialized - useAuth must be used within AuthProvider")
+    throw new Error("Logout service not available")
   },
 }
 
-// Create context with default value
 const AuthContext = createContext<AuthContextType>(defaultAuthContext)
 
-// Auth Provider Component
+interface AuthResponse {
+  user: User
+  token: string
+}
+
 export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    const initializeAuth = () => {
-      try {
-        if (typeof window === "undefined") return
+    if (typeof window === "undefined") return
 
-        const storedToken = localStorage.getItem("authToken")
-        const storedUser = localStorage.getItem("authUser")
+    try {
+      const storedToken = localStorage.getItem("authToken")
+      const storedUser = localStorage.getItem("authUser")
 
-        if (storedToken && storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser)
-            setToken(storedToken)
-            setUser(parsedUser)
-          } catch (error) {
-            console.error("Failed to parse stored user:", error)
-            clearAuth()
-          }
-        }
-      } catch (error) {
-        console.error("Failed to initialize auth:", error)
-      } finally {
-        setIsLoading(false)
+      if (storedToken && storedUser) {
+        setToken(storedToken)
+        setUser(JSON.parse(storedUser))
       }
+    } catch (error) {
+      console.error("Failed to restore auth state:", error)
+      clearAuth()
+    } finally {
+      setIsLoading(false)
     }
-
-    initializeAuth()
   }, [])
 
-  // Clear auth data
   const clearAuth = () => {
     setUser(null)
     setToken(null)
@@ -88,8 +80,8 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
       try {
         localStorage.removeItem("authToken")
         localStorage.removeItem("authUser")
-      } catch (e) {
-        console.error("Failed to clear localStorage:", e)
+      } catch (error) {
+        console.error("Failed to clear auth storage:", error)
       }
     }
   }

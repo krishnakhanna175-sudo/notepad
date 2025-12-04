@@ -14,7 +14,7 @@ import { Plus, Search } from "lucide-react"
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
-  const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes()
+  const { notes, isLoading, fetchNotes, createNote, updateNote, deleteNote } = useNotes()
   const [editingNote, setEditingNote] = useState<any>(null)
   const [showEditor, setShowEditor] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -23,9 +23,16 @@ export default function DashboardPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login")
+      router.push("/auth/login")
     }
   }, [user, authLoading, router])
+
+  // Fetch notes when authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchNotes()
+    }
+  }, [authLoading, user, fetchNotes])
 
   if (authLoading || isLoading) {
     return (

@@ -1,17 +1,15 @@
-import { NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
-import { User } from "@/models/User"
 import { generateToken } from "@/lib/jwt"
+import { User } from "@/models/User"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
   try {
-    // Connect to database
     await connectDB()
 
-    // Parse request body
     const { email, password } = await request.json()
 
-    // Validate input
+    // Validation
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
@@ -19,7 +17,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate email format
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -28,16 +26,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate password length
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      )
-    }
-
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() })
+    const existingUser = await User.findOne({
+      email: email.toLowerCase(),
+    })
 
     if (existingUser) {
       return NextResponse.json(
@@ -47,32 +39,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new user
-    const newUser = await User.create({
+    const newUser = new User({
       email: email.toLowerCase(),
       password,
     })
 
+    await newUser.save()
+
     // Generate token
     const token = generateToken(newUser._id.toString())
 
-    // Return success response
     return NextResponse.json(
       {
-        token,
         user: {
-          id: newUser._id.toString(),
+          _id: newUser._id,
           email: newUser.email,
         },
+        token,
       },
       { status: 201 }
     )
-  } catch (error) {
-    console.error("Registration error:", error)
-
-    const message = error instanceof Error ? error.message : "Internal server error"
-
+  } catch (error: any) {
+    console.error("Register error:", error)
     return NextResponse.json(
-      { error: message },
+      { error: "Registration failed" },
       { status: 500 }
     )
   }

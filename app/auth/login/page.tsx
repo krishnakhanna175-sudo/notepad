@@ -1,85 +1,66 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Lock, Mail } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 
 export default function LoginPage() {
+  const router = useRouter()
+  const auth = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const auth = useAuth()
-  const router = useRouter()
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    // Client-side validation
     if (!email || !password) {
-      setError("Please fill in all fields")
+      setError("Email and password are required")
       return
     }
 
-    if (!email.includes("@")) {
-      setError("Please enter a valid email")
+    if (!auth || typeof auth.login !== "function") {
+      setError("Authentication service not available")
       return
     }
 
     setIsLoading(true)
-
     try {
-      // Verify auth.login is a function
-      if (!auth || typeof auth.login !== "function") {
-        throw new Error("Login service is not properly initialized. Please refresh the page and try again.")
-      }
-      
-      // Call the login function directly
       await auth.login(email, password)
-      
-      // Clear form and redirect
       setEmail("")
       setPassword("")
-      
       router.push("/dashboard")
     } catch (err) {
-      console.error("Login error:", err)
-      const message = err instanceof Error ? err.message : "Login failed"
-      setError(message)
+      setError(err instanceof Error ? err.message : "Login failed")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <div className="p-8">
-          <h1 className="text-3xl font-bold mb-2 text-center">SecureNotePad</h1>
-          <p className="text-center text-muted-foreground mb-8">Sign in to your account</p>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardDescription>Enter your credentials to access your notes</CardDescription>
+        </CardHeader>
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Email
-              </label>
+              <label className="text-sm font-medium">Email</label>
               <Input
-                id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
@@ -90,14 +71,10 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Password
-              </label>
+              <label className="text-sm font-medium">Password</label>
               <Input
-                id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
@@ -106,17 +83,17 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-muted-foreground mt-4">
             Don't have an account?{" "}
-            <Link href="/auth/register" className="text-primary hover:underline font-medium">
-              Register
+            <Link href="/auth/register" className="text-primary hover:underline">
+              Sign up
             </Link>
           </p>
-        </div>
+        </CardContent>
       </Card>
     </div>
   )

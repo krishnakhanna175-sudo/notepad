@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 
 interface Note {
@@ -13,16 +13,14 @@ interface Note {
 }
 
 export function useNotes() {
+  const { token } = useAuth()
   const [notes, setNotes] = useState<Note[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { token } = useAuth()
 
   const fetchNotes = useCallback(async () => {
     if (!token) return
 
     setIsLoading(true)
-    setError(null)
     try {
       const response = await fetch("/api/notes", {
         headers: {
@@ -30,110 +28,97 @@ export function useNotes() {
         },
       })
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch notes")
-      }
-
+      if (!response.ok) throw new Error("Failed to fetch notes")
       const data = await response.json()
-      setNotes(data.notes)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setNotes(data.notes || [])
+    } catch (error) {
+      console.error("Failed to fetch notes:", error)
     } finally {
       setIsLoading(false)
     }
   }, [token])
 
   const createNote = useCallback(
-    async (title: string, content = "") => {
-      if (!token) return
+    async (title: string, content: string) => {
+      if (!token) throw new Error("Not authenticated")
 
-      try {
-        const response = await fetch("/api/notes", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ title, content }),
-        })
+      const response = await fetch("/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title, content }),
+      })
 
-        if (!response.ok) {
-          throw new Error("Failed to create note")
-        }
+      if (!response.ok) throw new Error("Failed to create note")
+      const data = await response.json()
 
-        const data = await response.json()
-        setNotes((prev) => [data.note, ...prev])
-        return data.note
-      } catch (err) {
-        throw err instanceof Error ? err : new Error("Failed to create note")
-      }
+      setNotes([data.note, ...notes])
+      return data.note
     },
-    [token],
+    [token, notes]
   )
 
   const updateNote = useCallback(
-    async (id: string, title: string, content: string, isArchived = false) => {
-      if (!token) return
+    async (
+      id: string,
+      title: string,
+      content: string,
+      isArchived: boolean
+    ) => {
+      if (!token) throw new Error("Not authenticated")
 
-      try {
-        const response = await fetch(`/api/notes/${id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ title, content, isArchived }),
-        })
+      const response = await fetch(`/api/notes/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title, content, isArchived }),
+      })
 
-        if (!response.ok) {
-          throw new Error("Failed to update note")
-        }
+      if (!response.ok) throw new Error("Failed to update note")
+      const data = await response.json()
 
-        const data = await response.json()
-        setNotes((prev) => prev.map((note) => (note._id === id ? data.note : note)))
-        return data.note
-      } catch (err) {
-        throw err instanceof Error ? err : new Error("Failed to update note")
-      }
+      setNotes(
+        notes.map((note) =>
+          note._id === id
+            ? {
+                ...note,
+                title: data.note.title,
+                content: data.note.content,
+                isArchived: data.note.isArchived,
+              }
+            : note
+        )
+      )
+      return data.note
     },
-    [token],
+    [token, notes]
   )
 
   const deleteNote = useCallback(
     async (id: string) => {
-      if (!token) return
+      if (!token) throw new Error("Not authenticated")
 
-      try {
-        const response = await fetch(`/api/notes/${id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+      const response = await fetch(`/api/notes/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
 
-        if (!response.ok) {
-          throw new Error("Failed to delete note")
-        }
+      if (!response.ok) throw new Error("Failed to delete note")
 
-        setNotes((prev) => prev.filter((note) => note._id !== id))
-      } catch (err) {
-        throw err instanceof Error ? err : new Error("Failed to delete note")
-      }
+      setNotes(notes.filter((note) => note._id !== id))
     },
-    [token],
+    [token, notes]
   )
-
-  // Fetch notes on mount or when token changes
-  useEffect(() => {
-    if (token) {
-      fetchNotes()
-    }
-  }, [token, fetchNotes])
 
   return {
     notes,
     isLoading,
-    error,
     fetchNotes,
     createNote,
     updateNote,

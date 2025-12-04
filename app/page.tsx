@@ -44,7 +44,7 @@ export default function Home() {
         <div className="text-center mb-20">
           <h2 className="text-5xl font-bold mb-4">Your Secure Note-Taking Solution</h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Keep your thoughts safe with end-to-end encrypted notes. Fast, secure, and always accessible.
+            Keep your thoughts safe with encrypted notes. Fast, secure, and always accessible.
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/auth/register">
@@ -68,7 +68,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Secure & Private</h3>
             <p className="text-muted-foreground">
-              Your notes are encrypted and secure. Only you can access them with your private account.
+              Your notes are secured. Only you can access them with your account.
             </p>
           </Card>
 
@@ -78,7 +78,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Organize Easily</h3>
             <p className="text-muted-foreground">
-              Create, edit, archive, and search through your notes with an intuitive interface.
+              Archive, search, and organize your notes with an intuitive interface.
             </p>
           </Card>
 
@@ -87,15 +87,12 @@ export default function Home() {
               <Zap className="w-12 h-12 text-primary" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
-            <p className="text-muted-foreground">Built on modern technology for instant note syncing and retrieval.</p>
+            <p className="text-muted-foreground">
+              Instant sync across devices. Your notes are always up to date.
+            </p>
           </Card>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-700 py-8 text-center text-muted-foreground">
-        <p>Made with Next.js and MongoDB. Deployed on Vercel.</p>
-      </footer>
     </div>
   )
 }
