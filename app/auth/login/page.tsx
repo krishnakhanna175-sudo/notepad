@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login } = useAuth()
+  const auth = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,11 +37,13 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      if (typeof login !== "function") {
-        throw new Error("Login service not available")
+      // Verify auth.login is a function
+      if (!auth || typeof auth.login !== "function") {
+        throw new Error("Login service is not properly initialized. Please refresh the page and try again.")
       }
       
-      const result = await login(email, password)
+      // Call the login function directly
+      await auth.login(email, password)
       
       // Clear form and redirect
       setEmail("")

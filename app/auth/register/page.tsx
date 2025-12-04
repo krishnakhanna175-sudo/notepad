@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const { register } = useAuth()
+  const auth = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -48,11 +48,13 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      if (typeof register !== "function") {
-        throw new Error("Registration service not available")
+      // Verify auth.register is a function
+      if (!auth || typeof auth.register !== "function") {
+        throw new Error("Registration service is not properly initialized. Please refresh the page and try again.")
       }
       
-      const result = await register(email, password)
+      // Call the register function directly
+      await auth.register(email, password)
       
       // Clear form and redirect
       setEmail("")

@@ -111,11 +111,22 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || "Login failed")
+        let errorMessage = "Login failed"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError)
+        }
+        throw new Error(errorMessage)
       }
 
-      const data: AuthResponse = await response.json()
+      let data: AuthResponse
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        throw new Error("Invalid response from server")
+      }
 
       // Store auth data
       setToken(data.token)
@@ -125,8 +136,8 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         try {
           localStorage.setItem("authToken", data.token)
           localStorage.setItem("authUser", JSON.stringify(data.user))
-        } catch (e) {
-          console.error("Failed to persist auth data:", e)
+        } catch (storageError) {
+          console.error("Failed to persist auth data:", storageError)
         }
       }
     } catch (error) {
@@ -154,11 +165,22 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || "Registration failed")
+        let errorMessage = "Registration failed"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError)
+        }
+        throw new Error(errorMessage)
       }
 
-      const data: AuthResponse = await response.json()
+      let data: AuthResponse
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        throw new Error("Invalid response from server")
+      }
 
       // Store auth data
       setToken(data.token)
@@ -168,8 +190,8 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         try {
           localStorage.setItem("authToken", data.token)
           localStorage.setItem("authUser", JSON.stringify(data.user))
-        } catch (e) {
-          console.error("Failed to persist auth data:", e)
+        } catch (storageError) {
+          console.error("Failed to persist auth data:", storageError)
         }
       }
     } catch (error) {
