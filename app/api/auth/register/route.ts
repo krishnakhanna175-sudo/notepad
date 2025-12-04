@@ -1,50 +1,79 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/User"
 import { generateToken } from "@/lib/jwt"
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    console.log("Register endpoint called")
+    // Connect to database
     await connectDB()
-    console.log("Database connected")
-    
-    const { email, password } = await req.json()
-    console.log("Register attempt for email:", email)
+
+    // Parse request body
+    const { email, password } = await request.json()
 
     // Validate input
-    if (!email || !password || password.length < 6) {
-      return NextResponse.json({ error: "Email and password (min 6 characters) are required" }, { status: 400 })
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      )
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      )
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters" },
+        { status: 400 }
+      )
     }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() })
+
     if (existingUser) {
-      console.log("User already exists:", email)
-      return NextResponse.json({ error: "Email already in use" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Email already registered" },
+        { status: 409 }
+      )
     }
 
     // Create new user
-    const user = await User.create({
+    const newUser = await User.create({
       email: email.toLowerCase(),
       password,
     })
-    console.log("User created:", user._id)
 
-    // Generate JWT token
-    const token = generateToken(user._id.toString())
+    // Generate token
+    const token = generateToken(newUser._id.toString())
 
+    // Return success response
     return NextResponse.json(
       {
-        message: "User registered successfully",
         token,
-        user: { id: user._id.toString(), email: user.email },
+        user: {
+          id: newUser._id.toString(),
+          email: newUser.email,
+        },
       },
-      { status: 201 },
+      { status: 201 }
     )
   } catch (error) {
-    console.error("Register error:", error)
-    const errorMessage = error instanceof Error ? error.message : "Registration failed"
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    console.error("Registration error:", error)
+
+    const message = error instanceof Error ? error.message : "Internal server error"
+
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    )
   }
 }

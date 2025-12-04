@@ -29,10 +29,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <h1 className="text-2xl font-bold">SecureNotePad</h1>
           <div className="flex gap-4">
-            <Link href="/login">
+            <Link href="/auth/login">
               <Button variant="outline">Sign In</Button>
             </Link>
-            <Link href="/register">
+            <Link href="/auth/register">
               <Button>Get Started</Button>
             </Link>
           </div>
@@ -47,12 +47,12 @@ export default function Home() {
             Keep your thoughts safe with end-to-end encrypted notes. Fast, secure, and always accessible.
           </p>
           <div className="flex gap-4 justify-center">
-            <Link href="/register">
+            <Link href="/auth/register">
               <Button size="lg" className="px-8">
                 Create Free Account
               </Button>
             </Link>
-            <Link href="/login">
+            <Link href="/auth/login">
               <Button size="lg" variant="outline" className="px-8 bg-transparent">
                 Already have an account?
               </Button>

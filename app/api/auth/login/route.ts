@@ -1,52 +1,66 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/User"
 import { generateToken } from "@/lib/jwt"
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    console.log("Login endpoint called")
+    // Connect to database
     await connectDB()
-    console.log("Database connected")
-    
-    const { email, password } = await req.json()
-    console.log("Login attempt for email:", email)
+
+    // Parse request body
+    const { email, password } = await request.json()
 
     // Validate input
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      )
     }
 
-    // Find user and include password field (it's excluded by default)
+    // Find user by email (include password field)
     const user = await User.findOne({ email: email.toLowerCase() }).select("+password")
 
     if (!user) {
-      console.log("User not found:", email)
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      )
     }
 
-    // Compare passwords
+    // Verify password
     const isPasswordValid = await user.comparePassword(password)
+
     if (!isPasswordValid) {
-      console.log("Invalid password for user:", email)
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      )
     }
 
-    // Generate JWT token
+    // Generate token
     const token = generateToken(user._id.toString())
-    console.log("User logged in:", user._id)
 
+    // Return success response
     return NextResponse.json(
       {
-        message: "Login successful",
         token,
-        user: { id: user._id.toString(), email: user.email },
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+        },
       },
-      { status: 200 },
+      { status: 200 }
     )
   } catch (error) {
     console.error("Login error:", error)
-    const errorMessage = error instanceof Error ? error.message : "Login failed"
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+
+    const message = error instanceof Error ? error.message : "Internal server error"
+
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    )
   }
 }

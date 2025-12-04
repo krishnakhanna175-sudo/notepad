@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
@@ -11,52 +10,49 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Lock, Mail } from "lucide-react"
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [isReady, setIsReady] = useState(false)
-  const { login } = useAuth()
-  const router = useRouter()
 
-  // Ensure hooks are ready before allowing form submission
-  useEffect(() => {
-    setIsReady(true)
-  }, [])
+  const { register } = useAuth()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    if (!isReady) {
-      setError("Page is loading, please wait")
+    // Client-side validation
+    if (!email || !password || !confirmPassword) {
+      setError("Please fill in all fields")
       return
     }
 
-    // Validate inputs
-    if (!email || !email.includes("@")) {
-      setError("Please enter a valid email address")
+    if (!email.includes("@")) {
+      setError("Please enter a valid email")
       return
     }
 
-    if (!password) {
-      setError("Password is required")
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
       return
     }
 
     setIsLoading(true)
 
     try {
-      if (typeof login !== "function") {
-        throw new Error("Login service is not available. Please refresh the page.")
-      }
-      await login(email, password)
+      await register(email, password)
       router.push("/dashboard")
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Login failed"
-      setError(errorMessage)
-      console.error("Login error:", err)
+      const message = err instanceof Error ? err.message : "Registration failed"
+      setError(message)
     } finally {
       setIsLoading(false)
     }
@@ -67,52 +63,72 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg">
         <div className="p-8">
           <h1 className="text-3xl font-bold mb-2 text-center">SecureNotePad</h1>
-          <p className="text-center text-muted-foreground mb-8">Sign in to your account</p>
+          <p className="text-center text-muted-foreground mb-8">Create a new account</p>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 rounded-lg text-sm">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
                 <Mail className="w-4 h-4" />
                 Email
               </label>
               <Input
+                id="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
                 <Lock className="w-4 h-4" />
                 Password
               </label>
               <Input
+                id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="text-sm font-medium flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Confirm Password
+              </label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isLoading}
                 required
               />
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline font-medium">
-              Register
+            Already have an account?{" "}
+            <Link href="/auth/login" className="text-primary hover:underline font-medium">
+              Sign in
             </Link>
           </p>
         </div>
