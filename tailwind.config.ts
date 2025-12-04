@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss"
-import defaultTheme from "tailwindcss/defaultTheme"
 
 const config: Config = {
   content: [
@@ -26,9 +25,6 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-      },
-      fontFamily: {
-        sans: ["var(--font-sans)", ...defaultTheme.fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {
