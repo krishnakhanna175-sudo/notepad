@@ -19,7 +19,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError("")
 
@@ -37,9 +37,19 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login(email, password)
+      if (typeof login !== "function") {
+        throw new Error("Login service not available")
+      }
+      
+      const result = await login(email, password)
+      
+      // Clear form and redirect
+      setEmail("")
+      setPassword("")
+      
       router.push("/dashboard")
     } catch (err) {
+      console.error("Login error:", err)
       const message = err instanceof Error ? err.message : "Login failed"
       setError(message)
     } finally {

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, ReactNode, FC, PropsWithChildren } from "react"
 
 // User type
 interface AuthUser {
@@ -25,11 +25,28 @@ interface AuthContextType {
   logout: () => void
 }
 
-// Create context
-const AuthContext = createContext<AuthContextType | null>(null)
+// Provide default implementation
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  token: null,
+  isLoading: true,
+  isAuthenticated: false,
+  login: async () => {
+    throw new Error("Auth context not initialized - useAuth must be used within AuthProvider")
+  },
+  register: async () => {
+    throw new Error("Auth context not initialized - useAuth must be used within AuthProvider")
+  },
+  logout: () => {
+    throw new Error("Auth context not initialized - useAuth must be used within AuthProvider")
+  },
+}
+
+// Create context with default value
+const AuthContext = createContext<AuthContextType>(defaultAuthContext)
 
 // Auth Provider Component
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -68,13 +85,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setToken(null)
     if (typeof window !== "undefined") {
-      localStorage.removeItem("authToken")
-      localStorage.removeItem("authUser")
+      try {
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("authUser")
+      } catch (e) {
+        console.error("Failed to clear localStorage:", e)
+      }
     }
   }
 
   // Login function
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
+    if (!email || !password) {
+      throw new Error("Email and password are required")
+    }
+
     setIsLoading(true)
     try {
       const response = await fetch("/api/auth/login", {
@@ -86,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || "Login failed")
       }
 
@@ -97,8 +122,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user)
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("authToken", data.token)
-        localStorage.setItem("authUser", JSON.stringify(data.user))
+        try {
+          localStorage.setItem("authToken", data.token)
+          localStorage.setItem("authUser", JSON.stringify(data.user))
+        } catch (e) {
+          console.error("Failed to persist auth data:", e)
+        }
       }
     } catch (error) {
       clearAuth()
@@ -109,7 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   // Register function
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string): Promise<void> => {
+    if (!email || !password) {
+      throw new Error("Email and password are required")
+    }
+
     setIsLoading(true)
     try {
       const response = await fetch("/api/auth/register", {
@@ -121,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || "Registration failed")
       }
 
@@ -132,8 +165,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user)
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("authToken", data.token)
-        localStorage.setItem("authUser", JSON.stringify(data.user))
+        try {
+          localStorage.setItem("authToken", data.token)
+          localStorage.setItem("authUser", JSON.stringify(data.user))
+        } catch (e) {
+          console.error("Failed to persist auth data:", e)
+        }
       }
     } catch (error) {
       clearAuth()
@@ -144,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   // Logout function
-  const logout = () => {
+  const logout = (): void => {
     clearAuth()
   }
 

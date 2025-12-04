@@ -20,7 +20,7 @@ export default function RegisterPage() {
   const { register } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError("")
 
@@ -48,9 +48,20 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      await register(email, password)
+      if (typeof register !== "function") {
+        throw new Error("Registration service not available")
+      }
+      
+      const result = await register(email, password)
+      
+      // Clear form and redirect
+      setEmail("")
+      setPassword("")
+      setConfirmPassword("")
+      
       router.push("/dashboard")
     } catch (err) {
+      console.error("Registration error:", err)
       const message = err instanceof Error ? err.message : "Registration failed"
       setError(message)
     } finally {
