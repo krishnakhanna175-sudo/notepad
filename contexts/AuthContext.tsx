@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode, type FC } from "react"
 
 interface User {
   id: string
@@ -16,26 +16,43 @@ interface AuthContextType {
   logout: () => void
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+// Create context with a default value to avoid undefined errors
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  isLoading: true,
+  login: async () => {
+    throw new Error("useAuth must be used within AuthProvider")
+  },
+  register: async () => {
+    throw new Error("useAuth must be used within AuthProvider")
+  },
+  logout: () => {
+    throw new Error("useAuth must be used within AuthProvider")
+  },
+})
 
-export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
+export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isMounted, setIsMounted] = useState(false)
 
   // Initialize from localStorage on mount
   useEffect(() => {
-    try {
-      if (typeof window === "undefined") return
+    if (typeof window === "undefined") {
+      setIsLoading(false)
+      return
+    }
 
+    try {
       const storedToken = localStorage.getItem("token")
       if (storedToken) {
         setToken(storedToken)
         const storedUser = localStorage.getItem("user")
         if (storedUser) {
           try {
-            setUser(JSON.parse(storedUser) as User)
+            const parsedUser = JSON.parse(storedUser) as User
+            setUser(parsedUser)
           } catch (e) {
             console.error("Failed to parse stored user:", e)
             try {
@@ -49,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     } catch (e) {
       console.error("Failed to initialize auth:", e)
     } finally {
-      setIsMounted(true)
       setIsLoading(false)
     }
   }, [])
